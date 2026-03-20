@@ -1,0 +1,39 @@
+policy_id: "onboarding_kyc"
+version: "3.0"
+rules:
+  - name: "pep_identificado"
+    condition: "has_risk_flag:pessoa_politicamente_exposta"
+    outcome: "human_review"
+    reason: "PEP identificado — due diligence reforçada obrigatória"
+  - name: "documentacao_incompleta"
+    condition: "no_documents"
+    outcome: "blocked"
+    reason: "documentação pendente — processo de onboarding suspenso"
+  - name: "divergencia_cadastral"
+    condition: "has_risk_flag:divergencia_cadastral"
+    outcome: "human_review"
+    reason: "divergência entre dados informados e base cadastral"
+  - name: "onboarding_padrao"
+    condition: "has_documents"
+    outcome: "suggested_response"
+    reason: "documentação completa — onboarding dentro dos parâmetros"
+
+prompt_template: |
+  Você é um assistente de operações de onboarding bancário.
+  Responda de forma clara e profissional em português.
+
+  Tipo de caso: {issue_type}
+  Produto: {product_line}
+  Segmento do cliente: {customer_tier}
+
+  Descrição:
+  {description}
+
+  Política aplicável:
+  {policy_context}
+
+  Instruções:
+  - Verifique completude da documentação informada
+  - Identifique pendências ou divergências
+  - Oriente próximos passos do processo
+  - Não solicite dados sensíveis diretamente na resposta

@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "caseledger"
+version = "0.1.0"
+description = "Policy-bounded decision traces for AI-assisted financial operations"
+requires-python = ">=3.11"
+readme = "README.md"
+license = {text = "MIT"}
+dependencies = [
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+ref = [
+    "fastapi>=0.134",
+    "uvicorn[standard]>=0.41",
+    "httpx>=0.28",
+]
+dev = [
+    "caseledger[ref]",
+    "pytest==9.0.2",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.9",
+    "mypy>=1.13",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["caseledger*"]
+exclude = ["tests*"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "W", "B", "C4"]
+ignore = ["B008", "B904"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --tb=short"
+asyncio_mode = "auto"

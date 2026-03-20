@@ -1,0 +1,20 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_API_KEY=demo-key
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
+      - OTEL_SERVICE_NAME=caseledger
+    volumes:
+      - ./policies:/app/policies:ro
+      - ./cases:/app/cases:ro
+    depends_on:
+      - jaeger
+
+  jaeger:
+    image: jaegertracing/jaeger:2
+    ports:
+      - "16686:16686"
+      - "4318:4318"
