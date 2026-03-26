@@ -19,13 +19,13 @@ from typing import Any
 class IssueType(StrEnum):
     """Recognized financial operation categories."""
 
-    CONTESTACAO_COBRANCA = "contestacao_cobranca"
-    AUMENTO_LIMITE = "aumento_limite"
+    CHARGE_DISPUTE = "charge_dispute"
+    LIMIT_INCREASE = "limit_increase"
     ONBOARDING_KYC = "onboarding_kyc"
-    SEGUNDA_VIA = "segunda_via"
-    TRANSACAO_NEGADA = "transacao_negada"
-    DISPUTA_DOCUMENTACAO = "disputa_documentacao"
-    CONSULTA_GERAL = "consulta_geral"
+    CARD_REPLACEMENT = "card_replacement"
+    TRANSACTION_DECLINED = "transaction_declined"
+    DOCUMENTATION_DISPUTE = "documentation_dispute"
+    GENERAL_INQUIRY = "general_inquiry"
 
 
 class CustomerTier(StrEnum):
@@ -40,11 +40,11 @@ class CustomerTier(StrEnum):
 class ProductLine(StrEnum):
     """Financial product lines."""
 
-    CARTAO_CREDITO = "cartao_credito"
-    CONTA_CORRENTE = "conta_corrente"
-    EMPRESTIMO = "emprestimo"
-    INVESTIMENTO = "investimento"
-    SEGURO = "seguro"
+    CREDIT_CARD = "credit_card"
+    CHECKING_ACCOUNT = "checking_account"
+    LOAN = "loan"
+    INVESTMENT = "investment"
+    INSURANCE = "insurance"
 
 
 @dataclass
@@ -72,7 +72,7 @@ class CaseEnvelope:
     risk_flags: list[str] = field(default_factory=list)
     documents: list[str] = field(default_factory=list)
     customer_history_summary: str | None = None
-    valor_brl: float | None = None
+    amount_brl: float | None = None
 
     # Metadata
     created_at: str = field(

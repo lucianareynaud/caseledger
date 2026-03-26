@@ -32,12 +32,12 @@ def _make_case(**overrides) -> CaseEnvelope:
     """Build a test case with sensible defaults."""
     defaults = {
         "case_id": "TEST-001",
-        "issue_type": IssueType.CONTESTACAO_COBRANCA,
-        "product_line": ProductLine.CARTAO_CREDITO,
+        "issue_type": IssueType.CHARGE_DISPUTE,
+        "product_line": ProductLine.CREDIT_CARD,
         "customer_tier": CustomerTier.STANDARD,
-        "description": "Cobrança duplicada de R$180",
-        "documents": ["fatura.pdf"],
-        "valor_brl": 180.0,
+        "description": "Duplicate charge of R$180",
+        "documents": ["invoice.pdf"],
+        "amount_brl": 180.0,
     }
     defaults.update(overrides)
     return CaseEnvelope(**defaults)
@@ -53,29 +53,29 @@ def _write_policy(path: Path, policy_dict: dict) -> Path:
 def _simple_policy() -> dict:
     """Minimal policy for testing."""
     return {
-        "policy_id": "contestacao_cobranca",
+        "policy_id": "charge_dispute",
         "version": "1.0",
         "rules": [
             {
-                "name": "valor_alto",
-                "condition": "valor_brl > 500",
+                "name": "high_value",
+                "condition": "amount_brl > 500",
                 "outcome": "human_review",
-                "reason": "valor alto",
+                "reason": "high value",
             },
             {
-                "name": "sem_docs",
+                "name": "no_docs",
                 "condition": "no_documents",
                 "outcome": "blocked",
-                "reason": "sem documentação",
+                "reason": "no documentation",
             },
             {
-                "name": "padrao",
+                "name": "default",
                 "condition": "default",
                 "outcome": "suggested_response",
-                "reason": "dentro dos parâmetros",
+                "reason": "within parameters",
             },
         ],
-        "prompt_template": "Caso: {description}",
+        "prompt_template": "Case: {description}",
     }
 
 
@@ -86,7 +86,7 @@ async def _mock_completer(
     metadata: dict | None = None,
 ) -> CompletionResult:
     return CompletionResult(
-        text="Resposta mock para teste.",
+        text="Mock response for testing.",
         model="gpt-4o-mini",
         tokens_in=10,
         tokens_out=15,
@@ -101,24 +101,24 @@ class TestCaseEnvelope:
     def test_create_minimal(self):
         case = _make_case()
         assert case.case_id == "TEST-001"
-        assert case.issue_type == IssueType.CONTESTACAO_COBRANCA
+        assert case.issue_type == IssueType.CHARGE_DISPUTE
 
     def test_to_dict(self):
         case = _make_case()
         d = case.to_dict()
         assert d["case_id"] == "TEST-001"
-        assert d["issue_type"] == "contestacao_cobranca"
-        assert d["product_line"] == "cartao_credito"
+        assert d["issue_type"] == "charge_dispute"
+        assert d["product_line"] == "credit_card"
         assert "created_at" in d
 
     def test_risk_flags_default_empty(self):
         case = _make_case()
         assert case.risk_flags == []
 
-    def test_valor_brl_optional(self):
-        case = _make_case(valor_brl=None)
+    def test_amount_brl_optional(self):
+        case = _make_case(amount_brl=None)
         d = case.to_dict()
-        assert "valor_brl" not in d
+        assert "amount_brl" not in d
 
 
 class TestPolicyLoading:
@@ -128,7 +128,7 @@ class TestPolicyLoading:
         path = tmp_path / "test.yaml"
         _write_policy(path, _simple_policy())
         policy = load_policy(path)
-        assert policy.policy_id == "contestacao_cobranca"
+        assert policy.policy_id == "charge_dispute"
         assert policy.version == "1.0"
         assert len(policy.rules) == 3
 
@@ -160,7 +160,7 @@ class TestPolicyEvaluation:
     def test_suggested_response(self, tmp_path):
         policy = self._load(tmp_path)
         case = _make_case(
-            valor_brl=180.0, documents=["f.pdf"]
+            amount_brl=180.0, documents=["f.pdf"]
         )
         status, reason, snippets = evaluate_policy(
             policy, case
@@ -169,16 +169,16 @@ class TestPolicyEvaluation:
 
     def test_human_review_high_value(self, tmp_path):
         policy = self._load(tmp_path)
-        case = _make_case(valor_brl=1500.0)
+        case = _make_case(amount_brl=1500.0)
         status, reason, snippets = evaluate_policy(
             policy, case
         )
         assert status == OutcomeStatus.HUMAN_REVIEW
-        assert "valor_alto" in snippets
+        assert "high_value" in snippets
 
     def test_blocked_no_documents(self, tmp_path):
         policy = self._load(tmp_path)
-        case = _make_case(documents=[], valor_brl=100.0)
+        case = _make_case(documents=[], amount_brl=100.0)
         status, reason, snippets = evaluate_policy(
             policy, case
         )
@@ -192,11 +192,11 @@ class TestResolver:
         policy_dir = tmp_path / "policies"
         policy_dir.mkdir()
         _write_policy(
-            policy_dir / "contestacao_cobranca.yaml",
+            policy_dir / "charge_dispute.yaml",
             _simple_policy(),
         )
 
-        case = _make_case(valor_brl=180.0)
+        case = _make_case(amount_brl=180.0)
         outcome = await resolve_case(
             case=case,
             policies_dir=str(policy_dir),
@@ -205,7 +205,7 @@ class TestResolver:
 
         assert outcome.status == OutcomeStatus.SUGGESTED
         assert outcome.response_text is not None
-        assert outcome.policy_id == "contestacao_cobranca"
+        assert outcome.policy_id == "charge_dispute"
         assert outcome.model_selected == "gpt-4o-mini"
         assert outcome.cost_usd == 0.0001
 
@@ -213,11 +213,11 @@ class TestResolver:
         policy_dir = tmp_path / "policies"
         policy_dir.mkdir()
         _write_policy(
-            policy_dir / "contestacao_cobranca.yaml",
+            policy_dir / "charge_dispute.yaml",
             _simple_policy(),
         )
 
-        case = _make_case(valor_brl=2000.0)
+        case = _make_case(amount_brl=2000.0)
         outcome = await resolve_case(
             case=case,
             policies_dir=str(policy_dir),
@@ -232,11 +232,11 @@ class TestResolver:
         policy_dir = tmp_path / "policies"
         policy_dir.mkdir()
         _write_policy(
-            policy_dir / "contestacao_cobranca.yaml",
+            policy_dir / "charge_dispute.yaml",
             _simple_policy(),
         )
 
-        case = _make_case(documents=[], valor_brl=100.0)
+        case = _make_case(documents=[], amount_brl=100.0)
         outcome = await resolve_case(
             case=case,
             policies_dir=str(policy_dir),
@@ -251,7 +251,7 @@ class TestResolver:
         policy_dir.mkdir()
 
         case = _make_case(
-            issue_type=IssueType.TRANSACAO_NEGADA
+            issue_type=IssueType.TRANSACTION_DECLINED
         )
         outcome = await resolve_case(
             case=case,
@@ -265,7 +265,7 @@ class TestResolver:
         policy_dir = tmp_path / "policies"
         policy_dir.mkdir()
         _write_policy(
-            policy_dir / "contestacao_cobranca.yaml",
+            policy_dir / "charge_dispute.yaml",
             _simple_policy(),
         )
 

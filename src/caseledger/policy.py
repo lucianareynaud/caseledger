@@ -9,26 +9,26 @@ simple, inspectable, auditable decision tree. The complexity
 lives in the policy YAML, not in the engine code.
 
 Policy YAML shape:
-    policy_id: "contestacao_cobranca"
+    policy_id: "charge_dispute"
     version: "2.1"
     rules:
       - name: "high_value_review"
-        condition: "valor_brl > 500"
+        condition: "amount_brl > 500"
         outcome: "human_review"
-        reason: "valor acima do threshold de automação"
+        reason: "amount above automation threshold"
       - name: "missing_docs_block"
         condition: "no_documents"
         outcome: "blocked"
-        reason: "documentação insuficiente para resolução"
+        reason: "insufficient documentation for resolution"
       - name: "default_suggest"
         condition: "default"
         outcome: "suggested_response"
-        reason: "caso dentro dos parâmetros de automação"
+        reason: "case within automation parameters"
     prompt_template: |
-      Você é um assistente de operações financeiras.
-      Contexto do caso: {description}
-      Política aplicável: {policy_context}
-      Responda de forma clara e objetiva.
+      You are a financial operations assistant.
+      Case context: {description}
+      Applicable policy: {policy_context}
+      Respond clearly and objectively.
 """
 
 from __future__ import annotations
@@ -145,7 +145,7 @@ def evaluate_policy(
     # Safety default: if no rule matches, require human review
     return (
         OutcomeStatus.HUMAN_REVIEW,
-        "nenhuma regra aplicável — revisão humana obrigatória",
+        "no applicable rule — human review required",
         snippets_used,
     )
 
@@ -173,13 +173,13 @@ def build_prompt(policy: Policy, case: CaseEnvelope) -> str:
 
 
 _DEFAULT_TEMPLATE = (
-    "Você é um assistente de operações financeiras.\n"
-    "Tipo de caso: {issue_type}\n"
-    "Produto: {product_line}\n"
-    "Segmento do cliente: {customer_tier}\n"
-    "Contexto do caso: {description}\n"
-    "Política aplicável:\n{policy_context}\n"
-    "Responda de forma clara, objetiva e profissional."
+    "You are a financial operations assistant.\n"
+    "Case type: {issue_type}\n"
+    "Product: {product_line}\n"
+    "Customer segment: {customer_tier}\n"
+    "Case context: {description}\n"
+    "Applicable policy:\n{policy_context}\n"
+    "Respond clearly, objectively, and professionally."
 )
 
 
@@ -191,8 +191,8 @@ def _evaluate_condition(
 
     Supported conditions:
         "default"                  — always matches
-        "valor_brl > N"            — numeric comparison
-        "valor_brl < N"            — numeric comparison
+        "amount_brl > N"           — numeric comparison
+        "amount_brl < N"           — numeric comparison
         "no_documents"             — case has no documents
         "has_risk_flag:FLAG"       — specific risk flag present
         "customer_tier:TIER"       — customer tier matches
@@ -221,9 +221,9 @@ def _evaluate_condition(
         tier = condition.split(":", 1)[1].strip()
         return case.customer_tier.value == tier
 
-    if "valor_brl" in condition:
+    if "amount_brl" in condition:
         return _eval_numeric_condition(
-            condition, case.valor_brl
+            condition, case.amount_brl
         )
 
     return False
@@ -233,11 +233,11 @@ def _eval_numeric_condition(
     condition: str,
     value: float | None,
 ) -> bool:
-    """Evaluate a numeric condition like 'valor_brl > 500'."""
+    """Evaluate a numeric condition like 'amount_brl > 500'."""
     if value is None:
         return False
 
-    parts = condition.replace("valor_brl", "").strip()
+    parts = condition.replace("amount_brl", "").strip()
 
     if parts.startswith(">"):
         threshold = float(parts[1:].strip())
@@ -260,8 +260,8 @@ def _build_policy_context(policy: Policy) -> str:
     lines = []
     for rule in policy.rules:
         lines.append(
-            f"- {rule.name}: se {rule.condition}, "
-            f"então {rule.outcome.value} "
+            f"- {rule.name}: if {rule.condition}, "
+            f"then {rule.outcome.value} "
             f"({rule.reason})"
         )
     return "\n".join(lines)

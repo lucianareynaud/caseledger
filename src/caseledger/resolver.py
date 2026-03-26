@@ -152,7 +152,7 @@ async def resolve_case(
             status=OutcomeStatus.BLOCKED,
             response_text=None,
             decision_reason=(
-                f"sem política definida para "
+                f"no policy defined for "
                 f"{case.issue_type.value}"
             ),
             policy_id="none",

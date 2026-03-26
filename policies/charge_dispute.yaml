@@ -1,0 +1,43 @@
+policy_id: "charge_dispute"
+version: "2.1"
+rules:
+  - name: "high_value_review"
+    condition: "amount_brl > 500"
+    outcome: "human_review"
+    reason: "amount above automation threshold — human review required"
+  - name: "no_documentation"
+    condition: "no_documents"
+    outcome: "blocked"
+    reason: "insufficient documentation for dispute analysis"
+  - name: "fraud_flag"
+    condition: "has_risk_flag:suspected_fraud"
+    outcome: "human_review"
+    reason: "active fraud flag — escalation to specialized analysis"
+  - name: "private_customer"
+    condition: "customer_tier:private"
+    outcome: "human_review"
+    reason: "private banking customer — preferential service required"
+  - name: "standard_resolution"
+    condition: "default"
+    outcome: "suggested_response"
+    reason: "case within automation parameters"
+
+prompt_template: |
+  You are a financial operations assistant for a Brazilian bank.
+  Respond clearly, objectively, and professionally in English.
+
+  Case type: {issue_type}
+  Product: {product_line}
+  Customer segment: {customer_tier}
+
+  Case description:
+  {description}
+
+  Applicable policy:
+  {policy_context}
+
+  Instructions:
+  - Identify if there is an improper charge based on the description
+  - Propose objective resolution
+  - Cite the applicable policy in the response
+  - If there is ambiguity, recommend additional analysis

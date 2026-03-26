@@ -31,7 +31,7 @@ class CaseRequest(BaseModel):
     description: str = Field(..., min_length=1)
     risk_flags: list[str] = Field(default_factory=list)
     documents: list[str] = Field(default_factory=list)
-    valor_brl: float | None = None
+    amount_brl: float | None = None
 
 
 async def _mock_completer(
@@ -43,11 +43,10 @@ async def _mock_completer(
     """Mock completer for demo without LLM API key."""
     return CompletionResult(
         text=(
-            "Com base na análise do caso e na política "
-            "aplicável, identificamos que a solicitação "
-            "está dentro dos parâmetros operacionais. "
-            "Recomendamos o processamento conforme "
-            "procedimento padrão."
+            "Based on the case analysis and applicable policy, "
+            "we have identified that the request is within "
+            "operational parameters. We recommend processing "
+            "according to standard procedure."
         ),
         model="mock-demo",
         tokens_in=50,
@@ -69,7 +68,7 @@ async def submit_case(request: CaseRequest) -> dict:
             description=request.description,
             risk_flags=request.risk_flags,
             documents=request.documents,
-            valor_brl=request.valor_brl,
+            amount_brl=request.amount_brl,
         )
     except ValueError as exc:
         raise HTTPException(

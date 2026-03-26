@@ -1,39 +1,39 @@
 policy_id: "onboarding_kyc"
 version: "3.0"
 rules:
-  - name: "pep_identificado"
-    condition: "has_risk_flag:pessoa_politicamente_exposta"
+  - name: "pep_identified"
+    condition: "has_risk_flag:politically_exposed_person"
     outcome: "human_review"
-    reason: "PEP identificado — due diligence reforçada obrigatória"
-  - name: "documentacao_incompleta"
+    reason: "PEP identified — enhanced due diligence required"
+  - name: "incomplete_documentation"
     condition: "no_documents"
     outcome: "blocked"
-    reason: "documentação pendente — processo de onboarding suspenso"
-  - name: "divergencia_cadastral"
-    condition: "has_risk_flag:divergencia_cadastral"
+    reason: "pending documentation — onboarding process suspended"
+  - name: "registration_discrepancy"
+    condition: "has_risk_flag:registration_discrepancy"
     outcome: "human_review"
-    reason: "divergência entre dados informados e base cadastral"
-  - name: "onboarding_padrao"
+    reason: "discrepancy between provided data and registration database"
+  - name: "standard_onboarding"
     condition: "has_documents"
     outcome: "suggested_response"
-    reason: "documentação completa — onboarding dentro dos parâmetros"
+    reason: "complete documentation — onboarding within parameters"
 
 prompt_template: |
-  Você é um assistente de operações de onboarding bancário.
-  Responda de forma clara e profissional em português.
+  You are a banking onboarding operations assistant.
+  Respond clearly and professionally in English.
 
-  Tipo de caso: {issue_type}
-  Produto: {product_line}
-  Segmento do cliente: {customer_tier}
+  Case type: {issue_type}
+  Product: {product_line}
+  Customer segment: {customer_tier}
 
-  Descrição:
+  Description:
   {description}
 
-  Política aplicável:
+  Applicable policy:
   {policy_context}
 
-  Instruções:
-  - Verifique completude da documentação informada
-  - Identifique pendências ou divergências
-  - Oriente próximos passos do processo
-  - Não solicite dados sensíveis diretamente na resposta
+  Instructions:
+  - Verify completeness of provided documentation
+  - Identify pending items or discrepancies
+  - Guide next steps in the process
+  - Do not request sensitive data directly in the response
